@@ -1,44 +1,30 @@
 name: W-Bot07
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
   schedule:
     - cron: '0 */5 * * *'
-
 concurrency:
   group: w-bot07
   cancel-in-progress: true
-
 permissions:
   contents: write
-
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Wait 25 seconds
-        run: sleep 25
-
-      - name: Restore session from session branch
+      - run: sleep 25
+      - name: Restore session
         run: |
           rm -rf session_bot
           git clone --branch session https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git session_bot 2>/dev/null || mkdir -p session_bot
-          echo "Session restored. Files: $(ls -A session_bot | wc -l)"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Save session periodically
+      - run: npm install
+      - name: Save session loop
         run: |
           (
             while true; do
@@ -51,19 +37,19 @@ jobs:
                 git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git 2>/dev/null || git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
                 git checkout -B session
                 git add .
-                git commit -m "save session $(date -u)" 2>/dev/null || echo "nothing to commit"
-                git push -f origin session 2>/dev/null || echo "push failed"
+                git commit -m "save session $(date -u)" 2>/dev/null || true
+                git push -f origin session 2>/dev/null || true
                 cd ..
               fi
             done
           ) &
           echo $! > /tmp/pusher.pid
-
       - name: Run bot
         timeout-minutes: 335
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: node index.js
-
-      - name: Final session save
+      - name: Final save
         if: always()
         run: |
           kill $(cat /tmp/pusher.pid) 2>/dev/null || true
@@ -75,8 +61,6 @@ jobs:
             git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git 2>/dev/null || git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
             git checkout -B session
             git add .
-            git commit -m "final save $(date -u)" 2>/dev/null || echo "nothing to commit"
+            git commit -m "final save $(date -u)" 2>/dev/null || true
             git push -f origin session
-          else
-            echo "No creds.json to save"
           fi
