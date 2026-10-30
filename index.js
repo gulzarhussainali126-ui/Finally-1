@@ -18,7 +18,7 @@ const SETTINGS = {
   PAYMENT_METHODS: "Cash, JazzCash 03491404543",
   // --- AI SETTINGS - صرف یہ 2 لائن آپ نے بدلنی ہیں ---
   GROQ_API_KEY: process.env.GROQ_API_KEY || "gsk_yahan_apni_key_dalen",
-  GROQ_MODEL: "llama-3.3-70b-versatile",
+  GROQ_MODEL: "llama-3.1-8b-instant",
 };
 // ========= END SETTINGS =========
 
